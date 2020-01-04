@@ -1,3 +1,4 @@
+import _thread
 import copy
 import time
 
@@ -114,4 +115,10 @@ if __name__ == '__main__':
     for alg in algorithms:
         os.process_list[alg] = copy.deepcopy(temp)
 
-    os.fcfs()
+    id1 = _thread.start_new_thread(os.fcfs, ())
+    id2 = _thread.start_new_thread(os.spn, ())
+    id3 = _thread.start_new_thread(os.rr, ())
+    id4 = _thread.start_new_thread(os.srt, ())
+
+    while True:
+        time.sleep(30)
