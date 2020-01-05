@@ -1,3 +1,4 @@
+import pprint
 import threading
 import copy
 import time
@@ -8,11 +9,15 @@ class Machine(object):
 
 
 class OS(object):
-    def __init__(self, prs_data):
+    def __init__(self):
         self.process_list = {}
         self.arr_times = {}
-        self.now = 0
+        self.timer = 0
 
+        self.tat = {}
+
+    def process_generator(self, file_path):
+        prs_data = csv_parser(file_path)
         temp = []
         for x in prs_data:
             temp.append(Process(x[0], int(x[2])))
@@ -34,32 +39,33 @@ class OS(object):
         t2.join()
         t3.join()
         t4.join()
+        pprint.pprint(self.tat)
 
     def delay(self):
         time.sleep(1 / speed)
-        self.now += 1
+        self.timer += 1
 
     def fcfs(self):
         start_time = time.time()
         while any(self.process_list['fcfs']):
             for prs in self.process_list['fcfs']:
-                if prs and self.arr_times[prs.id] <= self.now:
-                    self.now += prs.run()
+                if prs and self.arr_times[prs.id] <= self.timer:
+                    self.timer += prs.run()
                     break
             else:
                 self.delay()
-        print('fcfs:', time.time() - start_time)
+        self.tat['fcfs'] = time.time() - start_time
 
     def spn(self):  # sjf
         start_time = time.time()
         while any(self.process_list['spn']):
-            arr_prs = [prs for prs in self.process_list['spn'] if prs and self.arr_times[prs.id] <= self.now]
+            arr_prs = [prs for prs in self.process_list['spn'] if prs and self.arr_times[prs.id] <= self.timer]
             if arr_prs:
                 min_prs = min(arr_prs)
-                self.now += min_prs.run()
+                self.timer += min_prs.run()
             else:
                 self.delay()
-        print('spn:', time.time() - start_time)
+        self.tat['spn'] = time.time() - start_time
 
     def rr(self):
         start_time = time.time()
@@ -67,25 +73,25 @@ class OS(object):
             nothing = True
             for prs in self.process_list['rr']:
                 for _ in range(5):
-                    if prs and self.arr_times[prs.id] <= self.now:
+                    if prs and self.arr_times[prs.id] <= self.timer:
                         nothing = False
                         prs.run_ms()
-                        self.now += 1
+                        self.timer += 1
             if nothing:
                 self.delay()
-        print('rr:', time.time() - start_time)
+        self.tat['rr'] = time.time() - start_time
 
     def srt(self):
         start_time = time.time()
         while any(self.process_list['srt']):
-            arr_prs = [prs for prs in self.process_list['srt'] if prs and self.arr_times[prs.id] <= self.now]
+            arr_prs = [prs for prs in self.process_list['srt'] if prs and self.arr_times[prs.id] <= self.timer]
             if arr_prs:
                 min_prs = min(arr_prs)
                 min_prs.run_ms()
-                self.now += 1
+                self.timer += 1
             else:
                 self.delay()
-        print('srt:', time.time() - start_time)
+        self.tat['srt'] = time.time() - start_time
 
 
 class Process(object):
@@ -113,10 +119,6 @@ class Process(object):
         return prev_bt
 
 
-def process_generator(file_path):
-    pass
-
-
 def csv_parser(file_path):
     with open(file_path, 'r') as file:
         lst = [[elm for elm in line.strip().split(',')][:3] for line in file.readlines()[1:]]
@@ -125,8 +127,13 @@ def csv_parser(file_path):
 
 if __name__ == '__main__':
     speed = 10
-    data = csv_parser('data.csv')
-    os = OS(data)
+    os = OS()
+    os.process_generator('data.csv')
+    print('START')
+    os.run()
+    print('END')
+    os.timer = 0  # reset the timer
+    os.process_generator('data2.csv')
     print('START')
     os.run()
     print('END')
