@@ -12,8 +12,12 @@ class OS(object):
     def __init__(self):
         self.process_list = {}
         self.arr_times = {}
-        self.timer = 0
-
+        self.timer = {
+            'fcfs': 0,
+            'spn': 0,
+            'rr': 0,
+            'srt': 0
+        }
         self.tat = {}
 
     def process_generator(self, file_path):
@@ -41,30 +45,38 @@ class OS(object):
         t4.join()
         pprint.pprint(self.tat)
 
-    def delay(self):
+    def reset_timer(self):
+        self.timer = {
+            'fcfs': 0,
+            'spn': 0,
+            'rr': 0,
+            'srt': 0
+        }
+
+    def delay(self, alg):
         time.sleep(1 / speed)
-        self.timer += 1
+        self.timer[alg] += 1
 
     def fcfs(self):
         start_time = time.time()
         while any(self.process_list['fcfs']):
             for prs in self.process_list['fcfs']:
-                if prs and self.arr_times[prs.id] <= self.timer:
-                    self.timer += prs.run()
+                if prs and self.arr_times[prs.id] <= self.timer['fcfs']:
+                    self.timer['fcfs'] += prs.run()
                     break
             else:
-                self.delay()
+                self.delay('fcfs')
         self.tat['fcfs'] = time.time() - start_time
 
     def spn(self):  # sjf
         start_time = time.time()
         while any(self.process_list['spn']):
-            arr_prs = [prs for prs in self.process_list['spn'] if prs and self.arr_times[prs.id] <= self.timer]
+            arr_prs = [prs for prs in self.process_list['spn'] if prs and self.arr_times[prs.id] <= self.timer['spn']]
             if arr_prs:
                 min_prs = min(arr_prs)
-                self.timer += min_prs.run()
+                self.timer['spn'] += min_prs.run()
             else:
-                self.delay()
+                self.delay('spn')
         self.tat['spn'] = time.time() - start_time
 
     def rr(self):
@@ -73,24 +85,24 @@ class OS(object):
             nothing = True
             for prs in self.process_list['rr']:
                 for _ in range(5):
-                    if prs and self.arr_times[prs.id] <= self.timer:
+                    if prs and self.arr_times[prs.id] <= self.timer['rr']:
                         nothing = False
                         prs.run_ms()
-                        self.timer += 1
+                        self.timer['rr'] += 1
             if nothing:
-                self.delay()
+                self.delay('rr')
         self.tat['rr'] = time.time() - start_time
 
     def srt(self):
         start_time = time.time()
         while any(self.process_list['srt']):
-            arr_prs = [prs for prs in self.process_list['srt'] if prs and self.arr_times[prs.id] <= self.timer]
+            arr_prs = [prs for prs in self.process_list['srt'] if prs and self.arr_times[prs.id] <= self.timer['srt']]
             if arr_prs:
                 min_prs = min(arr_prs)
                 min_prs.run_ms()
-                self.timer += 1
+                self.timer['srt'] += 1
             else:
-                self.delay()
+                self.delay('srt')
         self.tat['srt'] = time.time() - start_time
 
 
@@ -132,7 +144,7 @@ if __name__ == '__main__':
     print('START')
     os.run()
     print('END')
-    os.timer = 0  # reset the timer
+    os.reset_timer()
     os.process_generator('data2.csv')
     print('START')
     os.run()
