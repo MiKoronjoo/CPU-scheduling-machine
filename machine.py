@@ -1,4 +1,4 @@
-import _thread
+import threading
 import copy
 import time
 
@@ -20,6 +20,20 @@ class OS(object):
         algorithms = ['fcfs', 'spn', 'rr', 'srt']
         for alg in algorithms:
             self.process_list[alg] = copy.deepcopy(temp)
+
+    def run(self):
+        t1 = threading.Thread(name='fcfs', target=os.fcfs)
+        t2 = threading.Thread(name='spn', target=os.spn)
+        t3 = threading.Thread(name='rr', target=os.rr)
+        t4 = threading.Thread(name='srt', target=os.srt)
+        t1.start()
+        t2.start()
+        t3.start()
+        t4.start()
+        t1.join()
+        t2.join()
+        t3.join()
+        t4.join()
 
     def delay(self):
         time.sleep(1 / speed)
@@ -113,11 +127,6 @@ if __name__ == '__main__':
     speed = 10
     data = csv_parser('data.csv')
     os = OS(data)
-
-    id1 = _thread.start_new_thread(os.fcfs, ())
-    id2 = _thread.start_new_thread(os.spn, ())
-    id3 = _thread.start_new_thread(os.rr, ())
-    id4 = _thread.start_new_thread(os.srt, ())
-
-    while True:
-        time.sleep(30)
+    print('START')
+    os.run()
+    print('END')
