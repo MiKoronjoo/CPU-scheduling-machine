@@ -8,12 +8,18 @@ class Machine(object):
 
 
 class OS(object):
-    def __init__(self, process_list=None):
-        if process_list is None:
-            process_list = {}
-        self.process_list = process_list
+    def __init__(self, prs_data):
+        self.process_list = {}
         self.arr_times = {}
         self.now = 0
+
+        temp = []
+        for x in prs_data:
+            temp.append(Process(x[0], int(x[2])))
+            self.arr_times[x[0]] = int(x[1])
+        algorithms = ['fcfs', 'spn', 'rr', 'srt']
+        for alg in algorithms:
+            self.process_list[alg] = copy.deepcopy(temp)
 
     def delay(self):
         time.sleep(1 / speed)
@@ -106,14 +112,7 @@ def csv_parser(file_path):
 if __name__ == '__main__':
     speed = 10
     data = csv_parser('data.csv')
-    os = OS()
-    temp = []
-    for x in data:
-        temp.append(Process(x[0], int(x[2])))
-        os.arr_times[x[0]] = int(x[1])
-    algorithms = ['fcfs', 'spn', 'rr', 'srt']
-    for alg in algorithms:
-        os.process_list[alg] = copy.deepcopy(temp)
+    os = OS(data)
 
     id1 = _thread.start_new_thread(os.fcfs, ())
     id2 = _thread.start_new_thread(os.spn, ())
