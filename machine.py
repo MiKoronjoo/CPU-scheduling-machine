@@ -1,11 +1,8 @@
+import pprint
 import threading
 import time
 
 import matplotlib.pyplot as plt
-
-
-class Machine(object):
-    pass
 
 
 class Process(object):
@@ -46,6 +43,24 @@ class ProcessTime(object):
 
 
 class OS(object):
+    colors = [
+        '#dd0000',  # red
+        '#009900',  # green
+        '#002db3',  # blue
+        '#fce300',  # yellow
+        '#ff7300',  # orange
+        '#990099',  # purple
+        '#00e6e6',  # cyan
+        '#ff99ff',  # pink
+        '#421100',  # brown pod
+        '#ddc15f',  # tacha
+        '#320042',  # blackcurrant
+        '#87b100',  # citrus
+        '#423200',  # mikado
+        '#00b187',  # persian green
+        '#004232',  # british racing green
+    ]
+
     def __init__(self):
         self._burst_times = {}
         self._arrival_times = {}
@@ -55,6 +70,10 @@ class OS(object):
         self._gantt_chart = []
         self.real_tat = 0
         self.idle = 0
+
+    @property
+    def process_count(self):
+        return len(self._burst_times)
 
     @property
     def cpu_util(self):
@@ -102,47 +121,39 @@ class OS(object):
     def reset_timer(self):
         self._timer = 0
 
+    @property
+    def timer(self):
+        return self._timer
+
     def add_to_chart(self, prs: Process = None):
         if prs is None:
             self._gantt_chart.append('')
         else:
             self._gantt_chart.append(prs.id)
 
-    def show_gantt(self):
-        c = [
-            '#dd0000',  # red
-            '#009900',  # green
-            '#002db3',  # blue
-            '#fce300',  # yellow
-            '#ff7300',  # orange
-            '#990099',  # purple
-            '#00e6e6',  # cyan
-            '#ff99ff',  # pink
-            '#421100',  # brown pod
-            '#ddc15f',  # tacha
-            '#320042',  # blackcurrant
-            '#87b100',  # citrus
-            '#423200',  # mikado
-            '#00b187',  # persian green
-            '#004232',  # british racing green
-        ]
-        cc = {}
+    def show_gantt(self, title=''):
+        color_dict = {}
         i = 0
-        for x in set(self._gantt_chart):
-            if x:
-                cc[x] = c[i]
+        for x in self._burst_times:
+            if x and x not in color_dict:
+                color_dict[x] = OS.colors[i]
                 i += 1
         fig, gnt = plt.subplots()
         gnt.set_ylim(0, 10)
-        # gnt.set_xlim(0, 20)
-        gnt.set_xlabel('ms since start')
+        gnt.set_xlabel('millisecond since start')
         gnt.set_ylabel('CPU')
+        gnt.set_title(title)
         gnt.set_yticks([])
         s = 0
         for x in self._gantt_chart:
             if x:
-                gnt.broken_barh([(s, 1)], (0, 2), facecolors=cc[x])
+                gnt.broken_barh([(s, 1)], (0, 2), facecolors=color_dict[x])
             s += 1
+        print('****', title, '****')
+        for x in color_dict:
+            rgb = tuple(int(color_dict[x][i + 1:i + 2], 16) * 16 for i in (0, 2, 4))
+            print('\033[38;2;%d;%d;%dm███\033[0m P_ID:' % rgb, x)
+        plt.show()
 
     def new_to_ready(self):
         for p_id in self._arrival_times:
@@ -247,43 +258,54 @@ class OS(object):
         self.real_tat = time.time() - start_time
 
 
+class Machine(object):
+    def __init__(self, data_path=''):
+        self.os = OS()
+        self._data_path = data_path
+
+    def set_data_path(self, data_path):
+        self._data_path = data_path
+
+    def sim_exe(self):  # simultaneous execution
+        if not self._data_path:
+            raise ValueError('data_path is not set')
+        t1 = OS()
+        t2 = OS()
+        t3 = OS()
+        t4 = OS()
+        t1.set_data(self._data_path)
+        t2.set_data(self._data_path)
+        t3.set_data(self._data_path)
+        t4.set_data(self._data_path)
+        th1 = threading.Thread(name='fcfs', target=t1.fcfs)
+        th2 = threading.Thread(name='spn', target=t2.spn)
+        th3 = threading.Thread(name='rr', target=t3.rr)
+        th4 = threading.Thread(name='srt', target=t4.srt)
+        th1.start()
+        th2.start()
+        th3.start()
+        th4.start()
+        th1.join()
+        th2.join()
+        th3.join()
+        th4.join()
+        print(f'fcfs\t{t1.timer} ^_^ {t1.real_tat * SPEED}')
+        print(f'spn \t{t2.timer} ^_^ {t2.real_tat * SPEED}')
+        print(f'rr  \t{t3.timer} ^_^ {t3.real_tat * SPEED}')
+        print(f'srt \t{t4.timer} ^_^ {t4.real_tat * SPEED}')
+        t1.show_gantt('First In First Out')
+        t2.show_gantt('Shortest Process Next')
+        t3.show_gantt('Round-Robin')
+        t4.show_gantt('Shortest Remaining Time')
+
+
 def csv_parser(file_path):
     with open(file_path, 'r') as file:
         lst = [[elm for elm in line.strip().split(',')][:3] for line in file.readlines()[1:]]
     return lst
 
 
-def sim_exe(data_path):  # simultaneous execution
-    t1 = OS()
-    t2 = OS()
-    t3 = OS()
-    t4 = OS()
-    t1.set_data(data_path)
-    t2.set_data(data_path)
-    t3.set_data(data_path)
-    t4.set_data(data_path)
-    th1 = threading.Thread(name='fcfs', target=t1.fcfs)
-    th2 = threading.Thread(name='spn', target=t2.spn)
-    th3 = threading.Thread(name='rr', target=t3.rr)
-    th4 = threading.Thread(name='srt', target=t4.srt)
-    th1.start()
-    th2.start()
-    th3.start()
-    th4.start()
-    th1.join()
-    th2.join()
-    th3.join()
-    th4.join()
-    print(f'fcfs\t{t1._timer} ^_^ {t1.real_tat * SPEED}')
-    print(f'spn\t\t{t2._timer} ^_^ {t2.real_tat * SPEED}')
-    print(f'rr\t\t{t3._timer} ^_^ {t3.real_tat * SPEED}')
-    print(f'srt\t\t{t4._timer} ^_^ {t4.real_tat * SPEED}')
-
-
 if __name__ == '__main__':
-    SPEED = 1000
-    # sim_exe('data.csv')
-    os = OS()
-    os.set_data('data.csv')
-    os.rr()
-    os.show_gantt()
+    SPEED = 10
+    machine = Machine('data.csv')
+    machine.sim_exe()
