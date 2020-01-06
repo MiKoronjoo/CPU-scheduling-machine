@@ -28,21 +28,6 @@ class OS(object):
     def process_generator(self, p_id, burst_time):
         self.ready_queue.append(Process(p_id, burst_time, self.arrival_times[p_id]))
 
-    # def run(self):
-    #     t1 = threading.Thread(name='fcfs', target=os.fcfs)
-    #     t2 = threading.Thread(name='spn', target=os.spn)
-    #     t3 = threading.Thread(name='rr', target=os.rr)
-    #     t4 = threading.Thread(name='srt', target=os.srt)
-    #     t1.start()
-    #     t2.start()
-    #     t3.start()
-    #     t4.start()
-    #     t1.join()
-    #     t2.join()
-    #     t3.join()
-    #     t4.join()
-    #     pprint.pprint(self.real_tat)
-
     def reset_timer(self):
         self.timer = 0
 
@@ -216,7 +201,4 @@ def sim_exe(data_path):  # simultaneous execution
 
 if __name__ == '__main__':
     SPEED = 10
-    # os = OS()
-    # os.set_data('data.csv')
-    # os.srt()
     sim_exe('data.csv')
