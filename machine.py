@@ -1,132 +1,11 @@
 import threading
 import time
 
+import matplotlib.pyplot as plt
+
 
 class Machine(object):
     pass
-
-
-class OS(object):
-    def __init__(self):
-        self.burst_times = {}
-        self.arrival_times = {}
-        self.timer = 0
-        self.ready_queue = []
-        self.real_tat = 0
-        self.last_arrive = 0
-        self.idle = 0
-
-    def set_data(self, file_path):
-        prs_data = csv_parser(file_path)
-        self.burst_times.clear()
-        self.arrival_times.clear()
-        for p_id, arrival_time, burst_time in prs_data:
-            self.burst_times[p_id] = int(burst_time)
-            self.arrival_times[p_id] = int(arrival_time)
-        self.last_arrive = max(self.arrival_times.values())
-
-    def process_generator(self, p_id, burst_time):
-        self.ready_queue.append(Process(p_id, burst_time, self.arrival_times[p_id]))
-
-    def reset_timer(self):
-        self.timer = 0
-
-    def new_to_ready(self):
-        for p_id in self.arrival_times:
-            if self.arrival_times[p_id] == self.timer:
-                self.process_generator(p_id, self.burst_times[p_id])
-
-    def wait(self):
-        time.sleep(1 / SPEED)
-        self.timer += 1
-        self.idle += 1
-
-    def fcfs(self):
-        start_time = time.time()
-        while any(self.ready_queue) or self.timer <= self.last_arrive:
-            self.new_to_ready()
-            for prs in self.ready_queue:
-                if prs:
-                    while prs:
-                        if not prs.start:
-                            prs.start = True
-                            prs.p_time.start_time = self.timer
-                        prs.run_ms()
-                        self.timer += 1
-                        self.new_to_ready()
-                    prs.p_time.end_time = self.timer
-                    prs.p_time.waiting_time = prs.p_time.response_time  # for FCFS
-                    break
-            else:
-                self.wait()
-        self.real_tat = time.time() - start_time
-
-    def spn(self):  # sjf
-        start_time = time.time()
-        while any(self.ready_queue) or self.timer <= self.last_arrive:
-            self.new_to_ready()
-            temp_rq = [prs for prs in self.ready_queue if prs]  # remove executed processes (have no burst time)
-            if temp_rq:
-                min_prs = min(temp_rq)  # choose shortest process
-                while min_prs:
-                    if not min_prs.start:
-                        min_prs.start = True
-                        min_prs.p_time.start_time = self.timer
-                    min_prs.run_ms()
-                    self.timer += 1
-                    self.new_to_ready()
-                min_prs.p_time.end_time = self.timer
-                min_prs.p_time.waiting_time = min_prs.p_time.response_time  # for SPN
-            else:
-                self.wait()
-        self.real_tat = time.time() - start_time
-
-    def rr(self):
-        start_time = time.time()
-        while any(self.ready_queue) or self.timer <= self.last_arrive:
-            self.new_to_ready()
-            nothing = True
-            for prs in self.ready_queue:
-                counter = 0
-                for _ in range(5):
-                    if prs:
-                        nothing = False
-                        if not prs.start:
-                            prs.start = True
-                            prs.p_time.start_time = self.timer
-                        prs.run_ms()
-                        self.timer += 1
-                        counter += 1
-                        for other in self.ready_queue:
-                            if other and other is not prs:
-                                other.p_time.waiting_time += 1
-                        self.new_to_ready()
-                    if counter and not prs:
-                        prs.p_time.end_time = self.timer
-            if nothing:
-                self.wait()
-        self.real_tat = time.time() - start_time
-
-    def srt(self):
-        start_time = time.time()
-        while any(self.ready_queue) or self.timer <= self.last_arrive:
-            self.new_to_ready()
-            temp_rq = [prs for prs in self.ready_queue if prs]
-            if temp_rq:
-                min_prs = min(temp_rq)  # choose shortest remaining time
-                if not min_prs.start:
-                    min_prs.start = True
-                    min_prs.p_time.start_time = self.timer
-                min_prs.run_ms()
-                self.timer += 1
-                for other in self.ready_queue:
-                    if other and other is not min_prs:
-                        other.p_time.waiting_time += 1
-                if not min_prs:
-                    min_prs.p_time.end_time = self.timer
-            else:
-                self.wait()
-        self.real_tat = time.time() - start_time
 
 
 class Process(object):
@@ -166,6 +45,208 @@ class ProcessTime(object):
         return self.end_time - self.arrival_time
 
 
+class OS(object):
+    def __init__(self):
+        self._burst_times = {}
+        self._arrival_times = {}
+        self._timer = 0
+        self._ready_queue = []
+        self._last_arrive = 0
+        self._gantt_chart = []
+        self.real_tat = 0
+        self.idle = 0
+
+    @property
+    def cpu_util(self):
+        if self._timer:
+            return (self._timer - self.idle) / self._timer
+        return 1.0
+
+    @property
+    def throughput(self):
+        if self._timer:
+            return len(self._ready_queue) * 1000 / self._timer
+        return 1.0
+
+    @property
+    def avg_tt(self):
+        if self._ready_queue:
+            return sum([prs.p_time.turnaround_time for prs in self._ready_queue]) / len(self._ready_queue)
+        return 0.0
+
+    @property
+    def avg_rt(self):
+        if self._ready_queue:
+            return sum([prs.p_time.response_time for prs in self._ready_queue]) / len(self._ready_queue)
+        return 0.0
+
+    @property
+    def avg_wt(self):
+        if self._ready_queue:
+            return sum([prs.p_time.waiting_time for prs in self._ready_queue]) / len(self._ready_queue)
+        return 0.0
+
+    def set_data(self, file_path):
+        prs_data = csv_parser(file_path)
+        self._burst_times.clear()
+        self._arrival_times.clear()
+        for p_id, arrival_time, burst_time in prs_data:
+            self._burst_times[p_id] = int(burst_time)
+            self._arrival_times[p_id] = int(arrival_time)
+        self._last_arrive = max(self._arrival_times.values())
+        self.reset_timer()
+
+    def process_generator(self, p_id, burst_time):
+        self._ready_queue.append(Process(p_id, burst_time, self._arrival_times[p_id]))
+
+    def reset_timer(self):
+        self._timer = 0
+
+    def add_to_chart(self, prs: Process = None):
+        if prs is None:
+            self._gantt_chart.append('')
+        else:
+            self._gantt_chart.append(prs.id)
+
+    def show_gantt(self):
+        c = [
+            '#dd0000',  # red
+            '#009900',  # green
+            '#002db3',  # blue
+            '#fce300',  # yellow
+            '#ff7300',  # orange
+            '#990099',  # purple
+            '#00e6e6',  # cyan
+            '#ff99ff',  # pink
+            '#421100',  # brown pod
+            '#ddc15f',  # tacha
+            '#320042',  # blackcurrant
+            '#87b100',  # citrus
+            '#423200',  # mikado
+            '#00b187',  # persian green
+            '#004232',  # british racing green
+        ]
+        cc = {}
+        i = 0
+        for x in set(self._gantt_chart):
+            if x:
+                cc[x] = c[i]
+                i += 1
+        fig, gnt = plt.subplots()
+        gnt.set_ylim(0, 10)
+        # gnt.set_xlim(0, 20)
+        gnt.set_xlabel('ms since start')
+        gnt.set_ylabel('CPU')
+        gnt.set_yticks([])
+        s = 0
+        for x in self._gantt_chart:
+            if x:
+                gnt.broken_barh([(s, 1)], (0, 2), facecolors=cc[x])
+            s += 1
+
+    def new_to_ready(self):
+        for p_id in self._arrival_times:
+            if self._arrival_times[p_id] == self._timer:
+                self.process_generator(p_id, self._burst_times[p_id])
+
+    def wait(self):
+        time.sleep(1 / SPEED)
+        self._timer += 1
+        self.add_to_chart()
+        self.idle += 1
+
+    def fcfs(self):
+        start_time = time.time()
+        while any(self._ready_queue) or self._timer <= self._last_arrive:
+            self.new_to_ready()
+            for prs in self._ready_queue:
+                if prs:
+                    while prs:
+                        if not prs.start:
+                            prs.start = True
+                            prs.p_time.start_time = self._timer
+                        prs.run_ms()
+                        self._timer += 1
+                        self.add_to_chart(prs)
+                        self.new_to_ready()
+                    prs.p_time.end_time = self._timer
+                    prs.p_time.waiting_time = prs.p_time.response_time  # for FCFS
+                    break
+            else:
+                self.wait()
+        self.real_tat = time.time() - start_time
+
+    def spn(self):  # sjf
+        start_time = time.time()
+        while any(self._ready_queue) or self._timer <= self._last_arrive:
+            self.new_to_ready()
+            temp_rq = [prs for prs in self._ready_queue if prs]  # remove executed processes (have no burst time)
+            if temp_rq:
+                min_prs = min(temp_rq)  # choose shortest process
+                while min_prs:
+                    if not min_prs.start:
+                        min_prs.start = True
+                        min_prs.p_time.start_time = self._timer
+                    min_prs.run_ms()
+                    self._timer += 1
+                    self.add_to_chart(min_prs)
+                    self.new_to_ready()
+                min_prs.p_time.end_time = self._timer
+                min_prs.p_time.waiting_time = min_prs.p_time.response_time  # for SPN
+            else:
+                self.wait()
+        self.real_tat = time.time() - start_time
+
+    def rr(self):
+        start_time = time.time()
+        while any(self._ready_queue) or self._timer <= self._last_arrive:
+            self.new_to_ready()
+            nothing = True
+            for prs in self._ready_queue:
+                counter = 0
+                for _ in range(5):
+                    if prs:
+                        nothing = False
+                        if not prs.start:
+                            prs.start = True
+                            prs.p_time.start_time = self._timer
+                        prs.run_ms()
+                        self._timer += 1
+                        self.add_to_chart(prs)
+                        counter += 1
+                        for other in self._ready_queue:
+                            if other and other is not prs:
+                                other.p_time.waiting_time += 1
+                        self.new_to_ready()
+                    if counter and not prs:
+                        prs.p_time.end_time = self._timer
+            if nothing:
+                self.wait()
+        self.real_tat = time.time() - start_time
+
+    def srt(self):
+        start_time = time.time()
+        while any(self._ready_queue) or self._timer <= self._last_arrive:
+            self.new_to_ready()
+            temp_rq = [prs for prs in self._ready_queue if prs]
+            if temp_rq:
+                min_prs = min(temp_rq)  # choose shortest remaining time
+                if not min_prs.start:
+                    min_prs.start = True
+                    min_prs.p_time.start_time = self._timer
+                min_prs.run_ms()
+                self._timer += 1
+                self.add_to_chart(min_prs)
+                for other in self._ready_queue:
+                    if other and other is not min_prs:
+                        other.p_time.waiting_time += 1
+                if not min_prs:
+                    min_prs.p_time.end_time = self._timer
+            else:
+                self.wait()
+        self.real_tat = time.time() - start_time
+
+
 def csv_parser(file_path):
     with open(file_path, 'r') as file:
         lst = [[elm for elm in line.strip().split(',')][:3] for line in file.readlines()[1:]]
@@ -193,12 +274,16 @@ def sim_exe(data_path):  # simultaneous execution
     th2.join()
     th3.join()
     th4.join()
-    print(f'fcfs\t{t1.timer} ^_^ {t1.real_tat * SPEED}')
-    print(f'spn\t\t{t2.timer} ^_^ {t2.real_tat * SPEED}')
-    print(f'rr\t\t{t3.timer} ^_^ {t3.real_tat * SPEED}')
-    print(f'srt\t\t{t4.timer} ^_^ {t4.real_tat * SPEED}')
+    print(f'fcfs\t{t1._timer} ^_^ {t1.real_tat * SPEED}')
+    print(f'spn\t\t{t2._timer} ^_^ {t2.real_tat * SPEED}')
+    print(f'rr\t\t{t3._timer} ^_^ {t3.real_tat * SPEED}')
+    print(f'srt\t\t{t4._timer} ^_^ {t4.real_tat * SPEED}')
 
 
 if __name__ == '__main__':
-    SPEED = 10
-    sim_exe('data.csv')
+    SPEED = 1000
+    # sim_exe('data.csv')
+    os = OS()
+    os.set_data('data.csv')
+    os.rr()
+    os.show_gantt()
