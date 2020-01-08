@@ -120,7 +120,12 @@ class OS(object):
         self.reset_timer()
 
     def process_generator(self, p_id, burst_time):
-        self._ready_queue.append(Process(p_id, burst_time, self._arrival_times[p_id]))
+        for prs in self._ready_queue:
+            if prs.id == p_id:
+                prs.burst_time = burst_time
+                break
+        else:
+            self._ready_queue.append(Process(p_id, burst_time, self._arrival_times[p_id]))
 
     def reset_timer(self):
         self._timer = 0
