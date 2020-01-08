@@ -63,6 +63,8 @@ class OS(object):
 
     def __init__(self):
         self._burst_times = {}
+        self._burst_times2 = {}
+        self._io_times = {}
         self._arrival_times = {}
         self._timer = 0
         self._ready_queue = []
@@ -109,8 +111,10 @@ class OS(object):
         prs_data = csv_parser(file_path)
         self._burst_times.clear()
         self._arrival_times.clear()
-        for p_id, arrival_time, burst_time in prs_data:
-            self._burst_times[p_id] = int(burst_time)
+        for p_id, arrival_time, burst_time1, io_time, burst_time2 in prs_data:
+            self._burst_times[p_id] = int(burst_time1)
+            self._burst_times2[p_id] = int(burst_time2)
+            self._io_times[p_id] = int(io_time)
             self._arrival_times[p_id] = int(arrival_time)
         self._last_arrive = max(self._arrival_times.values())
         self.reset_timer()
@@ -160,6 +164,13 @@ class OS(object):
             if self._arrival_times[p_id] == self._timer:
                 self.process_generator(p_id, self._burst_times[p_id])
 
+    def cpu_to_io(self, prs):
+        at2 = self._io_times[prs.id] + self._timer
+        self._io_times[prs.id] = 0
+        self._arrival_times[prs.id] = at2
+        prs.burst_time = self._burst_times2[prs.id]
+        self._last_arrive = max(self._last_arrive, self._arrival_times[prs.id])
+
     def wait(self):
         time.sleep(1 / SPEED)
         self._timer += 1
@@ -173,6 +184,7 @@ class OS(object):
             for prs in self._ready_queue:
                 if prs:
                     while prs:
+                        print(prs.id, prs.burst_time)
                         if not prs.start:
                             prs.start = True
                             prs.p_time.start_time = self._timer
@@ -180,8 +192,12 @@ class OS(object):
                         self._timer += 1
                         self.add_to_chart(prs)
                         self.new_to_ready()
-                    prs.p_time.end_time = self._timer
-                    prs.p_time.waiting_time = prs.p_time.response_time  # for FCFS
+                    else:
+                        if self._io_times[prs.id]:
+                            self.cpu_to_io(prs)
+                        else:
+                            prs.p_time.end_time = self._timer
+                            prs.p_time.waiting_time = prs.p_time.response_time  # for FCFS
                     break
             else:
                 self.wait()
@@ -202,8 +218,12 @@ class OS(object):
                     self._timer += 1
                     self.add_to_chart(min_prs)
                     self.new_to_ready()
-                min_prs.p_time.end_time = self._timer
-                min_prs.p_time.waiting_time = min_prs.p_time.response_time  # for SPN
+                else:
+                    if self._io_times[min_prs.id]:
+                        self.cpu_to_io(min_prs)
+                    else:
+                        min_prs.p_time.end_time = self._timer
+                        min_prs.p_time.waiting_time = min_prs.p_time.response_time  # for SPN
             else:
                 self.wait()
         self.real_tat = time.time() - start_time
@@ -230,7 +250,10 @@ class OS(object):
                                 other.p_time.waiting_time += 1
                         self.new_to_ready()
                     if counter and not prs:
-                        prs.p_time.end_time = self._timer
+                        if self._io_times[prs.id]:
+                            self.cpu_to_io(prs)
+                        else:
+                            prs.p_time.end_time = self._timer
             if nothing:
                 self.wait()
         self.real_tat = time.time() - start_time
@@ -252,7 +275,10 @@ class OS(object):
                     if other and other is not min_prs:
                         other.p_time.waiting_time += 1
                 if not min_prs:
-                    min_prs.p_time.end_time = self._timer
+                    if self._io_times[min_prs.id]:
+                        self.cpu_to_io(min_prs)
+                    else:
+                        min_prs.p_time.end_time = self._timer
             else:
                 self.wait()
         self.real_tat = time.time() - start_time
@@ -262,6 +288,7 @@ class Machine(object):
     def __init__(self, data_path=''):
         self.os = OS()
         self._data_path = data_path
+        self.os.set_data(data_path)
 
     def set_data_path(self, data_path):
         self._data_path = data_path
@@ -301,11 +328,12 @@ class Machine(object):
 
 def csv_parser(file_path):
     with open(file_path, 'r') as file:
-        lst = [[elm for elm in line.strip().split(',')][:3] for line in file.readlines()[1:]]
+        lst = [[elm for elm in line.strip().split(',')][:5] for line in file.readlines()[1:]]
     return lst
 
 
 if __name__ == '__main__':
-    SPEED = 10
+    SPEED = 1000
     machine = Machine('data.csv')
-    machine.sim_exe()
+    machine.os.rr()
+    machine.os.show_gantt()
