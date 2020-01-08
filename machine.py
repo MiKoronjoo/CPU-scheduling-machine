@@ -189,7 +189,6 @@ class OS(object):
             for prs in self._ready_queue:
                 if prs:
                     while prs:
-                        print(prs.id, prs.burst_time)
                         if not prs.start:
                             prs.start = True
                             prs.p_time.start_time = self._timer
@@ -340,5 +339,4 @@ def csv_parser(file_path):
 if __name__ == '__main__':
     SPEED = 1000
     machine = Machine('data.csv')
-    machine.os.rr()
-    machine.os.show_gantt()
+    machine.sim_exe()
