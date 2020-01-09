@@ -3,6 +3,8 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+import machine
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -342,8 +344,44 @@ class Ui_MainWindow(object):
         self.label_6.setText(_translate("MainWindow", "Path"))
 
 
+def make_csv():
+    data = 'id_process,arrival time,CPU burst1,I/O time,CPU burst2\n'
+    if ui.checkBox_1.isChecked():
+        data += f'{ui.prsId1.text()},{ui.at_1.text()},{ui.bt1_1.text()}'
+        if ui.io_1.isChecked():
+            data += f',{ui.iot_1.text()},{ui.bt2_1.text()}\n'
+        else:
+            data += ',0,0\n'
+    if ui.checkBox_2.isChecked():
+        data += f'{ui.prsId2.text()},{ui.at_2.text()},{ui.bt1_2.text()}'
+        if ui.io_2.isChecked():
+            data += f',{ui.iot_2.text()},{ui.bt2_2.text()}\n'
+        else:
+            data += ',0,0\n'
+    if ui.checkBox_3.isChecked():
+        data += f'{ui.prsId3.text()},{ui.at_3.text()},{ui.bt1_3.text()}'
+        if ui.io_3.isChecked():
+            data += f',{ui.iot_3.text()},{ui.bt2_3.text()}\n'
+        else:
+            data += ',0,0\n'
+    if ui.checkBox_4.isChecked():
+        data += f'{ui.prsId4.text()},{ui.at_4.text()},{ui.bt1_4.text()}'
+        if ui.io_4.isChecked():
+            data += f',{ui.iot_4.text()},{ui.bt2_4.text()}\n'
+        else:
+            data += ',0,0\n'
+    if ui.checkBox_5.isChecked():
+        data += f'{ui.prsId5.text()},{ui.at_5.text()},{ui.bt1_5.text()}'
+        if ui.io_5.isChecked():
+            data += f',{ui.iot_5.text()},{ui.bt2_5.text()}\n'
+        else:
+            data += ',0,0\n'
+    with open('.temp.csv', 'w') as file:
+        file.write(data)
+
+
 def call_fcfs(status):
-    print('fcfs')
+    pass
 
 
 def call_spn(status):
@@ -359,7 +397,7 @@ def call_srt(status):
 
 
 def call_all(status):
-    print('all', status)
+    make_csv()
 
 
 def io_1(checked):
@@ -452,6 +490,7 @@ def set_data(checked):
 if __name__ == "__main__":
     import sys
 
+    sm = machine.Machine()
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
