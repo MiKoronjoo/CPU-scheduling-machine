@@ -68,6 +68,7 @@ class OS(object):
         self._arrival_times = {}
         self._timer = 0
         self._ready_queue = []
+        self._io_works = []
         self._last_arrive = 0
         self._gantt_chart = []
         self.real_tat = 0
@@ -80,6 +81,7 @@ class OS(object):
         self._arrival_times.clear()
         self._timer = 0
         self._ready_queue.clear()
+        self._io_works.clear()
         self._last_arrive = 0
         self._gantt_chart.clear()
         self.real_tat = 0
@@ -140,7 +142,7 @@ class OS(object):
     def process_generator(self, p_id, burst_time):
         for prs in self._ready_queue:
             if prs.id == p_id:
-                prs.burst_time = burst_time
+                # prs.burst_time = burst_time
                 break
         else:
             self._ready_queue.append(Process(p_id, burst_time, self._arrival_times[p_id]))
@@ -183,6 +185,10 @@ class OS(object):
         plt.show()
 
     def new_to_ready(self):
+        for prs in self._io_works:
+            if self._arrival_times[prs.id] == self._timer:
+                self._ready_queue.append(prs)
+                self._io_works.remove(prs)
         for p_id in self._arrival_times:
             if self._arrival_times[p_id] == self._timer:
                 self.process_generator(p_id, self._burst_times[p_id])
@@ -192,6 +198,8 @@ class OS(object):
         self._io_times[prs.id] = 0
         self._arrival_times[prs.id] = at2
         prs.burst_time = self._burst_times2[prs.id]
+        self._io_works.append(prs)
+        self._ready_queue.remove(prs)
         self._last_arrive = max(self._last_arrive, self._arrival_times[prs.id])
 
     def wait(self):
@@ -274,8 +282,10 @@ class OS(object):
                     if counter and not prs:
                         if self._io_times[prs.id]:
                             self.cpu_to_io(prs)
+                            break
                         else:
                             prs.p_time.end_time = self._timer
+                            break
             if nothing:
                 self.wait()
         self.real_tat = time.time() - start_time
