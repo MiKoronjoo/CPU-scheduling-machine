@@ -114,6 +114,7 @@ class OS(object):
         self._io_times.clear()
         self._burst_times2.clear()
         self._gantt_chart.clear()
+        self._ready_queue.clear()
         for p_id, arrival_time, burst_time1, io_time, burst_time2 in prs_data:
             self._burst_times[p_id] = int(burst_time1)
             self._burst_times2[p_id] = int(burst_time2)
