@@ -291,16 +291,22 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.fcfs_b.clicked.connect(MainWindow.update)
-        self.spn_b.clicked.connect(MainWindow.update)
-        self.rr_b.clicked.connect(MainWindow.update)
-        self.srt_b.clicked.connect(MainWindow.update)
-        self.all_b.clicked.connect(MainWindow.update)
-        self.io_1.toggled['bool'].connect(MainWindow.show)
-        self.io_2.toggled['bool'].connect(MainWindow.show)
-        self.io_3.toggled['bool'].connect(MainWindow.show)
-        self.io_4.toggled['bool'].connect(MainWindow.show)
-        self.io_5.toggled['bool'].connect(MainWindow.show)
+        self.fcfs_b.clicked.connect(call_fcfs)
+        self.spn_b.clicked.connect(call_spn)
+        self.rr_b.clicked.connect(call_rr)
+        self.srt_b.clicked.connect(call_srt)
+        self.all_b.clicked.connect(call_all)
+        self.io_1.toggled['bool'].connect(io_1)
+        self.io_2.toggled['bool'].connect(io_2)
+        self.io_3.toggled['bool'].connect(io_3)
+        self.io_4.toggled['bool'].connect(io_4)
+        self.io_5.toggled['bool'].connect(io_5)
+        self.checkBox_1.toggled['bool'].connect(active_prs_1)
+        self.checkBox_2.toggled['bool'].connect(active_prs_2)
+        self.checkBox_3.toggled['bool'].connect(active_prs_3)
+        self.checkBox_4.toggled['bool'].connect(active_prs_4)
+        self.checkBox_5.toggled['bool'].connect(active_prs_5)
+        self.setData.toggled['bool'].connect(set_data)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -334,6 +340,113 @@ class Ui_MainWindow(object):
         self.setData.setText(_translate("MainWindow", "Set data"))
         self.LoadData.setText(_translate("MainWindow", "Load from csv file"))
         self.label_6.setText(_translate("MainWindow", "Path"))
+
+
+def call_fcfs(status):
+    print('fcfs')
+
+
+def call_spn(status):
+    pass
+
+
+def call_rr(status):
+    pass
+
+
+def call_srt(status):
+    pass
+
+
+def call_all(status):
+    print('all', status)
+
+
+def io_1(checked):
+    ui.iot_1.setEnabled(checked)
+    ui.bt2_1.setEnabled(checked)
+
+
+def io_2(checked):
+    ui.iot_2.setEnabled(checked)
+    ui.bt2_2.setEnabled(checked)
+
+
+def io_3(checked):
+    ui.iot_3.setEnabled(checked)
+    ui.bt2_3.setEnabled(checked)
+
+
+def io_4(checked):
+    ui.iot_4.setEnabled(checked)
+    ui.bt2_4.setEnabled(checked)
+
+
+def io_5(checked):
+    ui.iot_5.setEnabled(checked)
+    ui.bt2_5.setEnabled(checked)
+
+
+def active_prs_1(checked):
+    ui.prsId1.setEnabled(checked)
+    ui.at_1.setEnabled(checked)
+    ui.bt1_1.setEnabled(checked)
+    ui.io_1.setEnabled(checked)
+    enable = checked and ui.io_1.isChecked()
+    ui.iot_1.setEnabled(enable)
+    ui.bt2_1.setEnabled(enable)
+
+
+def active_prs_2(checked):
+    ui.prsId2.setEnabled(checked)
+    ui.at_2.setEnabled(checked)
+    ui.bt1_2.setEnabled(checked)
+    ui.io_2.setEnabled(checked)
+    enable = checked and ui.io_2.isChecked()
+    ui.iot_2.setEnabled(enable)
+    ui.bt2_2.setEnabled(enable)
+
+
+def active_prs_3(checked):
+    ui.prsId3.setEnabled(checked)
+    ui.at_3.setEnabled(checked)
+    ui.bt1_3.setEnabled(checked)
+    ui.io_3.setEnabled(checked)
+    enable = checked and ui.io_3.isChecked()
+    ui.iot_3.setEnabled(enable)
+    ui.bt2_3.setEnabled(enable)
+
+
+def active_prs_4(checked):
+    ui.prsId4.setEnabled(checked)
+    ui.at_4.setEnabled(checked)
+    ui.bt1_4.setEnabled(checked)
+    ui.io_4.setEnabled(checked)
+    enable = checked and ui.io_4.isChecked()
+    ui.iot_4.setEnabled(enable)
+    ui.bt2_4.setEnabled(enable)
+
+
+def active_prs_5(checked):
+    ui.prsId5.setEnabled(checked)
+    ui.at_5.setEnabled(checked)
+    ui.bt1_5.setEnabled(checked)
+    ui.io_5.setEnabled(checked)
+    enable = checked and ui.io_5.isChecked()
+    ui.iot_5.setEnabled(enable)
+    ui.bt2_5.setEnabled(enable)
+
+
+def set_data(checked):
+    check_boxes = [ui.checkBox_1, ui.checkBox_2, ui.checkBox_3, ui.checkBox_3, ui.checkBox_4, ui.checkBox_5]
+    for cb in check_boxes:
+        cb.setEnabled(checked)
+    active_prs_1(ui.checkBox_1.isEnabled() and ui.checkBox_1.isChecked())
+    active_prs_2(ui.checkBox_2.isEnabled() and ui.checkBox_2.isChecked())
+    active_prs_3(ui.checkBox_3.isEnabled() and ui.checkBox_3.isChecked())
+    active_prs_4(ui.checkBox_4.isEnabled() and ui.checkBox_4.isChecked())
+    active_prs_5(ui.checkBox_5.isEnabled() and ui.checkBox_5.isChecked())
+    ui.csvPath.setEnabled(not checked)
 
 
 if __name__ == "__main__":
