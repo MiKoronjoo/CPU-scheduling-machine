@@ -73,6 +73,18 @@ class OS(object):
         self.real_tat = 0
         self.idle = 0
 
+    def clear(self):
+        self._burst_times.clear()
+        self._burst_times2.clear()
+        self._io_times.clear()
+        self._arrival_times.clear()
+        self._timer = 0
+        self._ready_queue.clear()
+        self._last_arrive = 0
+        self._gantt_chart.clear()
+        self.real_tat = 0
+        self.idle = 0
+
     @property
     def process_count(self):
         return len(self._burst_times)
@@ -107,14 +119,16 @@ class OS(object):
             return sum([prs.p_time.waiting_time for prs in self._ready_queue]) / len(self._ready_queue)
         return 0.0
 
+    def __str__(self):
+        return f'Avg Turnaround Time: {self.avg_tt}\n' \
+            f'Avg Response Time:   {self.avg_rt}\n' \
+            f'Avg Waiting Time:    {self.avg_wt}\n' \
+            f'Throughput:          {self.throughput}\n' \
+            f'CPU Utilization:     {self.cpu_util}\n'
+
     def set_data(self, file_path):
         prs_data = csv_parser(file_path)
-        self._arrival_times.clear()
-        self._burst_times.clear()
-        self._io_times.clear()
-        self._burst_times2.clear()
-        self._gantt_chart.clear()
-        self._ready_queue.clear()
+        self.clear()
         for p_id, arrival_time, burst_time1, io_time, burst_time2 in prs_data:
             self._burst_times[p_id] = int(burst_time1)
             self._burst_times2[p_id] = int(burst_time2)
@@ -331,6 +345,10 @@ class Machine(object):
         t2.show_gantt('Shortest Process Next')
         t3.show_gantt('Round-Robin')
         t4.show_gantt('Shortest Remaining Time')
+        return f'* FCFS\n{t1}\n' \
+            f'* SPN \n{t2}\n' \
+            f'* RR  \n{t3}\n' \
+            f'* SRT \n{t4}\n'
 
 
 def csv_parser(file_path):

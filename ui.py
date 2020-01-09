@@ -394,29 +394,34 @@ def call_fcfs(status):
     set_csv()
     sm.os.fcfs()
     sm.os.show_gantt()
+    ui.textBrowser.setText(str(sm.os))
 
 
 def call_spn(status):
     set_csv()
     sm.os.spn()
     sm.os.show_gantt()
+    ui.textBrowser.setText(str(sm.os))
 
 
 def call_rr(status):
     set_csv()
     sm.os.rr()
     sm.os.show_gantt()
+    ui.textBrowser.setText(str(sm.os))
 
 
 def call_srt(status):
     set_csv()
     sm.os.srt()
     sm.os.show_gantt()
+    ui.textBrowser.setText(str(sm.os))
 
 
 def call_all(status):
     set_csv()
-    sm.sim_exe()
+    res = sm.sim_exe()
+    ui.textBrowser.setText(res)
 
 
 def io_1(checked):
