@@ -109,8 +109,11 @@ class OS(object):
 
     def set_data(self, file_path):
         prs_data = csv_parser(file_path)
-        self._burst_times.clear()
         self._arrival_times.clear()
+        self._burst_times.clear()
+        self._io_times.clear()
+        self._burst_times2.clear()
+        self._gantt_chart.clear()
         for p_id, arrival_time, burst_time1, io_time, burst_time2 in prs_data:
             self._burst_times[p_id] = int(burst_time1)
             self._burst_times2[p_id] = int(burst_time2)
@@ -292,7 +295,6 @@ class Machine(object):
     def __init__(self, data_path=''):
         self.os = OS()
         self._data_path = data_path
-        self.os.set_data(data_path)
 
     def set_data_path(self, data_path):
         self._data_path = data_path
@@ -336,7 +338,7 @@ def csv_parser(file_path):
     return lst
 
 
+SPEED = 1000
 if __name__ == '__main__':
-    SPEED = 1000
     machine = Machine('data.csv')
     machine.sim_exe()

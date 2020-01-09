@@ -380,24 +380,43 @@ def make_csv():
         file.write(data)
 
 
+def set_csv():
+    if ui.setData.isChecked():
+        make_csv()
+        sm.set_data_path('.temp.csv')
+        sm.os.set_data('.temp.csv')
+    else:
+        sm.set_data_path(ui.csvPath.text())
+        sm.os.set_data(ui.csvPath.text())
+
+
 def call_fcfs(status):
-    pass
+    set_csv()
+    sm.os.fcfs()
+    sm.os.show_gantt()
 
 
 def call_spn(status):
-    pass
+    set_csv()
+    sm.os.spn()
+    sm.os.show_gantt()
 
 
 def call_rr(status):
-    pass
+    set_csv()
+    sm.os.rr()
+    sm.os.show_gantt()
 
 
 def call_srt(status):
-    pass
+    set_csv()
+    sm.os.srt()
+    sm.os.show_gantt()
 
 
 def call_all(status):
-    make_csv()
+    set_csv()
+    sm.sim_exe()
 
 
 def io_1(checked):
