@@ -6,39 +6,39 @@ import matplotlib.pyplot as plt
 
 
 class Process(object):
-    def __init__(self, p_id, burst_time, arrival_time):
+    def __init__(self, p_id: str, burst_time: int, arrival_time: int) -> None:
         self.id = p_id
         self.burst_time = burst_time
         self.p_time = ProcessTime(arrival_time)
         self.start = False
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return bool(self.burst_time)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.id)
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'Process') -> bool:
         return self.burst_time < other.burst_time
 
-    def run_ms(self):
+    def run_ms(self) -> None:
         time.sleep(1 / SPEED)
         self.burst_time -= 1
 
 
 class ProcessTime(object):
-    def __init__(self, arrival_time):
+    def __init__(self, arrival_time: int) -> None:
         self.arrival_time = arrival_time
         self.waiting_time = 0
         self.start_time = 0
         self.end_time = 0
 
     @property
-    def response_time(self):
+    def response_time(self) -> int:
         return self.start_time - self.arrival_time
 
     @property
-    def turnaround_time(self):
+    def turnaround_time(self) -> int:
         return self.end_time - self.arrival_time
 
 
@@ -61,7 +61,7 @@ class OS(object):
         '#004232',  # british racing green
     ]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._burst_times = {}
         self._burst_times2 = {}
         self._io_times = {}
@@ -74,7 +74,7 @@ class OS(object):
         self.real_tat = 0
         self.idle = 0
 
-    def clear(self):
+    def clear(self) -> None:
         self._burst_times.clear()
         self._burst_times2.clear()
         self._io_times.clear()
@@ -88,47 +88,47 @@ class OS(object):
         self.idle = 0
 
     @property
-    def process_count(self):
+    def process_count(self) -> int:
         return len(self._burst_times)
 
     @property
-    def cpu_util(self):
+    def cpu_util(self) -> float:
         if self._timer:
             return (self._timer - self.idle) / self._timer
         return 1.0
 
     @property
-    def throughput(self):
+    def throughput(self) -> float:
         if self._timer:
             return len(self._ready_queue) * 1000 / self._timer
         return 1.0
 
     @property
-    def avg_tt(self):
+    def avg_tt(self) -> float:
         if self._ready_queue:
             return sum([prs.p_time.turnaround_time for prs in self._ready_queue]) / len(self._ready_queue)
         return 0.0
 
     @property
-    def avg_rt(self):
+    def avg_rt(self) -> float:
         if self._ready_queue:
             return sum([prs.p_time.response_time for prs in self._ready_queue]) / len(self._ready_queue)
         return 0.0
 
     @property
-    def avg_wt(self):
+    def avg_wt(self) -> float:
         if self._ready_queue:
             return sum([prs.p_time.waiting_time for prs in self._ready_queue]) / len(self._ready_queue)
         return 0.0
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'Avg Turnaround Time: {self.avg_tt}\n' \
             f'Avg Response Time:   {self.avg_rt}\n' \
             f'Avg Waiting Time:    {self.avg_wt}\n' \
             f'Throughput:          {self.throughput}\n' \
             f'CPU Utilization:     {self.cpu_util}\n'
 
-    def set_data(self, file_path):
+    def set_data(self, file_path: str) -> None:
         prs_data = csv_parser(file_path)
         self.clear()
         for p_id, arrival_time, burst_time1, io_time, burst_time2 in prs_data:
@@ -139,7 +139,7 @@ class OS(object):
         self._last_arrive = max(self._arrival_times.values())
         self.reset_timer()
 
-    def process_generator(self, p_id, burst_time):
+    def process_generator(self, p_id: str, burst_time: int) -> None:
         for prs in self._ready_queue:
             if prs.id == p_id:
                 # prs.burst_time = burst_time
@@ -147,20 +147,20 @@ class OS(object):
         else:
             self._ready_queue.append(Process(p_id, burst_time, self._arrival_times[p_id]))
 
-    def reset_timer(self):
+    def reset_timer(self) -> None:
         self._timer = 0
 
     @property
-    def timer(self):
+    def timer(self) -> int:
         return self._timer
 
-    def add_to_chart(self, prs: Process = None):
+    def add_to_chart(self, prs: Process = None) -> None:
         if prs is None:
             self._gantt_chart.append('')
         else:
             self._gantt_chart.append(prs.id)
 
-    def show_gantt(self, title=''):
+    def show_gantt(self, title: str = '') -> None:
         color_dict = {}
         i = 0
         for x in self._burst_times:
@@ -184,7 +184,7 @@ class OS(object):
             print('\033[38;2;%d;%d;%dm███\033[0m P_ID:' % rgb, x)
         plt.show()
 
-    def new_to_ready(self):
+    def new_to_ready(self) -> None:
         for prs in self._io_works:
             if self._arrival_times[prs.id] == self._timer:
                 self._ready_queue.append(prs)
@@ -193,7 +193,7 @@ class OS(object):
             if self._arrival_times[p_id] == self._timer:
                 self.process_generator(p_id, self._burst_times[p_id])
 
-    def cpu_to_io(self, prs):
+    def cpu_to_io(self, prs: Process) -> None:
         at2 = self._io_times[prs.id] + self._timer
         self._io_times[prs.id] = 0
         self._arrival_times[prs.id] = at2
@@ -202,13 +202,13 @@ class OS(object):
         self._ready_queue.remove(prs)
         self._last_arrive = max(self._last_arrive, self._arrival_times[prs.id])
 
-    def wait(self):
+    def wait(self) -> None:
         time.sleep(1 / SPEED)
         self._timer += 1
         self.add_to_chart()
         self.idle += 1
 
-    def fcfs(self):
+    def fcfs(self) -> None:
         start_time = time.time()
         while any(self._ready_queue) or self._timer <= self._last_arrive:
             self.new_to_ready()
@@ -233,7 +233,7 @@ class OS(object):
                 self.wait()
         self.real_tat = time.time() - start_time
 
-    def spn(self):  # sjf
+    def spn(self) -> None:  # sjf
         start_time = time.time()
         while any(self._ready_queue) or self._timer <= self._last_arrive:
             self.new_to_ready()
@@ -258,7 +258,7 @@ class OS(object):
                 self.wait()
         self.real_tat = time.time() - start_time
 
-    def rr(self):
+    def rr(self) -> None:
         start_time = time.time()
         while any(self._ready_queue) or self._timer <= self._last_arrive:
             self.new_to_ready()
@@ -290,7 +290,7 @@ class OS(object):
                 self.wait()
         self.real_tat = time.time() - start_time
 
-    def srt(self):
+    def srt(self) -> None:
         start_time = time.time()
         while any(self._ready_queue) or self._timer <= self._last_arrive:
             self.new_to_ready()
@@ -317,14 +317,14 @@ class OS(object):
 
 
 class Machine(object):
-    def __init__(self, data_path=''):
+    def __init__(self, data_path: str = '') -> None:
         self.os = OS()
         self._data_path = data_path
 
-    def set_data_path(self, data_path):
+    def set_data_path(self, data_path: str) -> None:
         self._data_path = data_path
 
-    def sim_exe(self):  # simultaneous execution
+    def sim_exe(self) -> str:  # simultaneous execution
         if not self._data_path:
             raise ValueError('data_path is not set')
         t1 = OS()
@@ -361,7 +361,7 @@ class Machine(object):
             f'* SRT \n{t4}\n'
 
 
-def csv_parser(file_path):
+def csv_parser(file_path: str) -> list:
     with open(file_path, 'r') as file:
         lst = [[elm for elm in line.strip().split(',')][:5] for line in file.readlines()[1:]]
     return lst
