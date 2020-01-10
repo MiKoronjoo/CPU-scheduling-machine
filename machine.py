@@ -5,6 +5,15 @@ import matplotlib.pyplot as plt
 
 
 class Process(object):
+    """
+    :param p_id:
+    :type p_id: string
+    :param burst_time:
+    :type burst_time: integer
+    :param arrival_time:
+    :type arrival_time: integer
+    """
+
     def __init__(self, p_id: str, burst_time: int, arrival_time: int) -> None:
         self.id = p_id
         self.burst_time = burst_time
@@ -26,6 +35,10 @@ class Process(object):
 
 
 class ProcessTime(object):
+    """
+    :param arrival_time:
+    :type arrival_time: integer
+    """
     def __init__(self, arrival_time: int) -> None:
         self.arrival_time = arrival_time
         self.waiting_time = 0
@@ -74,6 +87,9 @@ class OS(object):
         self.idle = 0
 
     def clear(self) -> None:
+        """
+        Clears OS object data
+        """
         self._burst_times.clear()
         self._burst_times2.clear()
         self._io_times.clear()
@@ -128,6 +144,11 @@ class OS(object):
             f'CPU Utilization:     {self.cpu_util}\n'
 
     def set_data(self, file_path: str) -> None:
+        """
+        Sets OS object data with file that read from file_path
+        :param file_path:
+        :type file_path: string
+        """
         prs_data = csv_parser(file_path)
         self.clear()
         for p_id, arrival_time, burst_time1, io_time, burst_time2 in prs_data:
@@ -139,6 +160,13 @@ class OS(object):
         self.reset_timer()
 
     def process_generator(self, p_id: str, burst_time: int) -> None:
+        """
+        Generates a process with args
+        :param p_id:
+        :type p_id: string
+        :param burst_time:
+        :type burst_time: integer
+        """
         for prs in self._ready_queue:
             if prs.id == p_id:
                 # prs.burst_time = burst_time
@@ -154,12 +182,22 @@ class OS(object):
         return self._timer
 
     def add_to_chart(self, prs: Process = None) -> None:
+        """
+        Adds process id to gantt chart
+        :param prs:
+        :type prs: Process
+        """
         if prs is None:
             self._gantt_chart.append('')
         else:
             self._gantt_chart.append(prs.id)
 
     def show_gantt(self, title: str = '') -> None:
+        """
+        Shows the gantt chart
+        :param title: optional:
+        :type title: string
+        """
         color_dict = {}
         i = 0
         for x in self._burst_times:
@@ -184,6 +222,9 @@ class OS(object):
         plt.show()
 
     def new_to_ready(self) -> None:
+        """
+        Moves arrival processes to ready queue
+        """
         for prs in self._io_works:
             if self._arrival_times[prs.id] == self._timer:
                 self._ready_queue.append(prs)
@@ -193,6 +234,11 @@ class OS(object):
                 self.process_generator(p_id, self._burst_times[p_id])
 
     def cpu_to_io(self, prs: Process) -> None:
+        """
+        Moves the process to I/O
+        :param prs:
+        :type prs: Process
+        """
         at2 = self._io_times[prs.id] + self._timer
         self._io_times[prs.id] = 0
         self._arrival_times[prs.id] = at2
@@ -202,12 +248,18 @@ class OS(object):
         self._last_arrive = max(self._last_arrive, self._arrival_times[prs.id])
 
     def wait(self) -> None:
+        """
+        Waits for one time unit (CPU is idle)
+        """
         time.sleep(1 / SPEED)
         self._timer += 1
         self.add_to_chart()
         self.idle += 1
 
     def fcfs(self) -> None:
+        """
+        Runs FCFS algorithm with OS object data
+        """
         start_time = time.time()
         while any(self._ready_queue) or self._timer <= self._last_arrive:
             self.new_to_ready()
@@ -233,6 +285,9 @@ class OS(object):
         self.real_tat = time.time() - start_time
 
     def spn(self) -> None:  # sjf
+        """
+        Runs SPN algorithm with OS object data
+        """
         start_time = time.time()
         while any(self._ready_queue) or self._timer <= self._last_arrive:
             self.new_to_ready()
@@ -258,6 +313,9 @@ class OS(object):
         self.real_tat = time.time() - start_time
 
     def rr(self) -> None:
+        """
+        Runs RR algorithm with OS object data
+        """
         start_time = time.time()
         while any(self._ready_queue) or self._timer <= self._last_arrive:
             self.new_to_ready()
@@ -290,6 +348,9 @@ class OS(object):
         self.real_tat = time.time() - start_time
 
     def srt(self) -> None:
+        """
+        Runs SRT algorithm with OS object data
+        """
         start_time = time.time()
         while any(self._ready_queue) or self._timer <= self._last_arrive:
             self.new_to_ready()
@@ -316,14 +377,28 @@ class OS(object):
 
 
 class Machine(object):
+    """
+    :param data_path: Optional:
+    :type data_path: string
+    """
     def __init__(self, data_path: str = '') -> None:
         self.os = OS()
         self._data_path = data_path
 
     def set_data_path(self, data_path: str) -> None:
+        """
+        Sets data_path
+        :param data_path:
+        :type data_path: string
+        """
         self._data_path = data_path
 
     def sim_exe(self) -> str:  # simultaneous execution
+        """
+        Runs FCFS, SPN, RR and SRT algorithms simultaneous
+        :return: Execution results
+        :rtype: string
+        """
         if not self._data_path:
             raise ValueError('data_path is not set')
         t1 = OS()
@@ -361,6 +436,12 @@ class Machine(object):
 
 
 def csv_parser(file_path: str) -> list:
+    """
+    Pares the data that read from file
+    :param file_path:
+    :type file_path: string
+    :rtype: list
+    """
     with open(file_path, 'r') as file:
         lst = [[elm for elm in line.strip().split(',')][:5] for line in file.readlines()[1:]]
     return lst
