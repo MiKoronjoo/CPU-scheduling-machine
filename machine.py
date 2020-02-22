@@ -322,7 +322,7 @@ class OS(object):
             nothing = True
             for prs in self._ready_queue:
                 counter = 0
-                for _ in range(5):
+                for _ in range(TIME_Q):
                     if prs:
                         nothing = False
                         if not prs.start:
@@ -448,6 +448,7 @@ def csv_parser(file_path: str) -> list:
 
 
 SPEED = 1000
+TIME_Q = 5
 if __name__ == '__main__':
     machine = Machine('data.csv')
     machine.sim_exe()
