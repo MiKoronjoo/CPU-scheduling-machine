@@ -19,6 +19,7 @@ class Process(object):
         self.burst_time = burst_time
         self.p_time = ProcessTime(arrival_time)
         self.start = False
+        self.first_burst_time = burst_time
 
     def __bool__(self) -> bool:
         return bool(self.burst_time)
@@ -278,7 +279,7 @@ class OS(object):
                             self.cpu_to_io(prs)
                         else:
                             prs.p_time.end_time = self._timer
-                            prs.p_time.waiting_time = prs.p_time.response_time  # for FCFS
+                            prs.p_time.waiting_time = prs.p_time.turnaround_time - prs.first_burst_time
                     break
             else:
                 self.wait()
